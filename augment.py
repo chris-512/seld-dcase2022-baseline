@@ -13,33 +13,26 @@ import requests
 import torch
 import torch.nn as nn
 
-"""
-https://pytorch.org/tutorials/beginner/audio_preprocessing_tutorial.html
-https://github.com/tuanio/conformer-rnnt/blob/main/model/spec_augment.py
-https://github.com/NVIDIA/NeMo/blob/main/nemo/collections/asr/parts/submodules/spectr_augment.py
-https://github.com/DemisEom/SpecAugment/blob/7f1435963b37ac8f9e4de9e44d754ecc41eaba85/SpecAugment/spec_augment_pytorch.py
-https://github.com/zcaceres/spec_augment/blob/master/SpecAugment.ipynb
-https://github.com/pyyush/SpecAugment/blob/master/augment.py
-https://pytorch.org/audio/master/tutorials/audio_feature_augmentation_tutorial.html
-https://github.com/zcaceres/spec_augment
-
-"""
-
-__all__ = ["SpecAugment"]
+__all__ = ["SpecAugment", "MixUp", "CutMix"]
 
 _SAMPLE_DIR = "_assets"
 
-SAMPLE_WAV_SPEECH_URL = "https://www2.cs.uic.edu/~i101/SoundFiles/CantinaBand3.wav"  # noqa: E501
-SAMPLE_WAV_SPEECH_PATH = os.path.join(_SAMPLE_DIR, "sound.wav")
+SAMPLE_WAV_SPEECH_URLS = ["https://www2.cs.uic.edu/~i101/SoundFiles/CantinaBand3.wav", 
+                          "https://www2.cs.uic.edu/~i101/SoundFiles/StarWars3.wav"]
+SAMPLE_WAV_SPEECH_PATHS = [os.path.join(_SAMPLE_DIR, "sample1.wav"), os.path.join(_SAMPLE_DIR, "sample2.wav")]
 
 os.makedirs(_SAMPLE_DIR, exist_ok=True)
 
 def _fetch_data():
-    uri = [
-        (SAMPLE_WAV_SPEECH_URL, SAMPLE_WAV_SPEECH_PATH),
+    uris = [
+        (SAMPLE_WAV_SPEECH_URLS[0], SAMPLE_WAV_SPEECH_PATHS[0]), 
+        (SAMPLE_WAV_SPEECH_URLS[1], SAMPLE_WAV_SPEECH_PATHS[1])
     ]
+    if all([os.path.exists(path) for _, path in uris]):
+        return
+    
     print('Downloading wav files...')
-    for url, path in uri:
+    for url, path in uris:
         with open(path, "wb") as file_:
             file_.write(requests.get(url).content)
 
@@ -119,7 +112,28 @@ class SpecAugment(nn.Module):
     def __repr__(self):
         return f"{self.__class__.__name__}()"
 
-def visualization_spectrogram(mel_spectrogram, title, block=True):
+class MixUp(nn.Module):
+    def __init__(self, batch_size):
+        self.mixup_lambda = torch.from_numpy(self.get_mix_lambda(0.5, batch_size))
+        
+    def __call__(self, x):
+        """Mixup x of even indexes (0, 2, 4, ...) with x of odd indexes (1, 3, 5, ...).
+        Args:
+            x: (batch_size * 2, ...)
+            mixup_lambda: (batch_size * 2,)
+            Returns:
+            out: (batch_size, ...)
+        """
+        out = (x[0 :: 2].transpose(0, -1) * self.mixup_lambda[0 :: 2] + \
+            x[1 :: 2].transpose(0, -1) * self.mixup_lambda[1 :: 2]).transpose(0, -1)
+        return out
+    
+    def get_mix_lambda(self, mixup_alpha, batch_size):
+        # Draw sample from a Beta distribution
+        mixup_lambdas = [np.random.beta(mixup_alpha, mixup_alpha, 1)[0] for _ in range(batch_size)]
+        return np.array(mixup_lambdas).astype(np.float32)
+
+def visualization_spectrogram(mel_spectrogram, index, title="", block=True):
     """visualizing result of SpecAugment
     # Arguments:
       mel_spectrogram(ndarray): mel_spectrogram to visualize.
@@ -127,7 +141,7 @@ def visualization_spectrogram(mel_spectrogram, title, block=True):
     """
     # Show mel-spectrogram using librosa's specshow.
     plt.figure(figsize=(10, 4))
-    librosa.display.specshow(librosa.power_to_db(mel_spectrogram[0, :, :], ref=np.max), y_axis='mel', fmax=8000, x_axis='time')
+    librosa.display.specshow(librosa.power_to_db(mel_spectrogram[index, :, :], ref=np.max), x_axis='time', y_axis='mel', fmax=8000)
     # plt.colorbar(format='%+2.0f dB')
     plt.title(title)
     plt.tight_layout()
@@ -136,24 +150,50 @@ def visualization_spectrogram(mel_spectrogram, title, block=True):
 if __name__ == '__main__':
     
     torch.random.manual_seed(4)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    display = False
     
-    audio_path = os.path.join(_SAMPLE_DIR, 'sound.wav')
-    audio, sampling_rate = librosa.load(audio_path)
-    mel_spectrogram = librosa.feature.melspectrogram(y=audio,
-                                                     sr=sampling_rate,
-                                                     n_mels=256,
-                                                     hop_length=128,
-                                                     fmax=8000)
+    augmentation_to_apply = ['mixup']
+    
+    specs = []
+    lengths = []
+    sr = []
+    for audio_path in SAMPLE_WAV_SPEECH_PATHS:
+        audio, sampling_rate = librosa.load(audio_path)
+        lengths.append(len(audio))
+        sr.append(sampling_rate)
+        print(f'audio: {audio_path} / shape: {audio.shape} / sample rate: {sampling_rate}')
+        mel_spectrogram = librosa.feature.melspectrogram(y=audio,
+                                                        sr=sampling_rate,
+                                                        n_mels=256,
+                                                        hop_length=128,
+                                                        fmax=8000)
+        specs.append(np.expand_dims(mel_spectrogram, axis=0))
+    mel_spectrogram = np.vstack(specs)
 
     shape = mel_spectrogram.shape
-    mel_spectrogram = np.reshape(mel_spectrogram, (-1, shape[0], shape[1]))
     mel_spectrogram = torch.from_numpy(mel_spectrogram)
     
-    # Show Raw mel-spectrogram
-    visualization_spectrogram(mel_spectrogram=mel_spectrogram, title='Raw mel spectrogram', block=False)
+    if display:
+        # Show Raw mel-spectrogram
+        visualization_spectrogram(mel_spectrogram, 0, title='Raw mel spectrogram-1', block=False)
+        visualization_spectrogram(mel_spectrogram, 1, title='Raw mel spectrogram-2', block=False)
     
-    augmentor = SpecAugment()
+    batch_size = 1
+    batch_size = 2 * batch_size if 'mixup' in augmentation_to_apply else batch_size
+    augmentor = torch.nn.Sequential(MixUp(batch_size))
     warped_masked_spectrogram = augmentor(mel_spectrogram)
     
-    # Show Time Warped & Masked mel-spectrogram
-    visualization_spectrogram(mel_spectrogram=warped_masked_spectrogram, title="pytorch Warped & Masked Spectrogram")
+    if display:
+        # Show Time Warped & Masked mel-spectrogram
+        visualization_spectrogram(warped_masked_spectrogram, index = 0, title="pytorch Warped & Masked Spectrogram")
+    
+    y_recov = librosa.feature.inverse.mel_to_audio(np.array(mel_spectrogram[0]), sr=sr[0])
+    y_recov = (y_recov * 32768).astype(np.int16)
+    print(y_recov.shape)
+    y_augm = librosa.feature.inverse.mel_to_audio(np.array(warped_masked_spectrogram[0]), sr=sr[0])
+    y_augm = (y_augm * 32768).astype(np.int16)
+    print(y_augm.shape)
+    #assert librosa.util.valid_audio(y_augm)
+    np.save('raw_recovered', y_recov)
+    np.save('raw_augmented', y_augm)
