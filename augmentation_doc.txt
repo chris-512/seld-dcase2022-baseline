@@ -1,0 +1,20 @@
+
+https://pytorch.org/tutorials/beginner/audio_preprocessing_tutorial.html
+https://github.com/tuanio/conformer-rnnt/blob/main/model/spec_augment.py
+https://github.com/NVIDIA/NeMo/blob/main/nemo/collections/asr/parts/submodules/spectr_augment.py
+https://github.com/DemisEom/SpecAugment/blob/7f1435963b37ac8f9e4de9e44d754ecc41eaba85/SpecAugment/spec_augment_pytorch.py
+https://github.com/zcaceres/spec_augment/blob/master/SpecAugment.ipynb
+https://github.com/pyyush/SpecAugment/blob/master/augment.py
+https://pytorch.org/audio/master/tutorials/audio_feature_augmentation_tutorial.html
+https://github.com/zcaceres/spec_augment
+
+
+Spatial mixup
+https://arxiv.org/pdf/2110.06126.pdf
+https://github.com/iver56/audiomentations
+file:///home/sykim/Downloads/SpecMix___A_Mixed_Sample_Data_Augmentation_method_for_Training_with_Time_Frequency_Domain_Features.pdf
+https://github.com/RetroCirce/HTS-Audio-Transformer/blob/8c5013ea1463c194a0b89c3c2f979f6d98e70a83/utils.py#L146
+https://arxiv.org/abs/2108.03020
+https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/f4295e2a8a9c66161a90929d98fef0f70b2d7258/pytorch/main.py
+https://github.com/suicao/Pytorch-Audio-Emotion-Recognition/blob/master/mixup.py
+https://github.com/GT-KIM/specmix/blob/1f8fae4c0f4ae3be574d62450138fb5dd443b222/sound_event_classification/utils.py
