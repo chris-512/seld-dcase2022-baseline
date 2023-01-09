@@ -13,6 +13,8 @@ import torch
 import torch.nn as nn
 
 # SpecAugment pdf: https://arxiv.org/pdf/1904.08779.pdf
+# spectrogram = https://librosa.org/doc/main/generated/librosa.stft.html
+# log-mel-spectrogram = https://librosa.org/doc/main/generated/librosa.feature.melspectrogram.html
 # https://github.com/DemisEom/SpecAugment/blob/7f1435963b37ac8f9e4de9e44d754ecc41eaba85/tests/spec_augment_test_pytorch.py#L64
 # https://www.researchgate.net/publication/319534366_A_Comparison_on_Audio_Signal_Preprocessing_Methods_for_Deep_Neural_Networks_on_Music_Tagging
 # https://colab.research.google.com/drive/1kKm0SVhC4v7SfbBeLfBn9RF-xO_qT8rq#scrollTo=cPouP_kiOixn
@@ -22,6 +24,8 @@ import torch.nn as nn
 # https://pypi.org/project/spec-augment/
 # https://github.com/TeaPoly/SpectrumAugmenter/blob/main/spectrum_augmenter.py
 # https://www.kaggle.com/code/yash612/simple-audio-augmentation
+# https://ahnjg.tistory.com/83
+
 
 """
     def _get_mel_spectrogram(self, linear_spectra):
