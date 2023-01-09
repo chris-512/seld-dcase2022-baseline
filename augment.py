@@ -23,6 +23,20 @@ import torch.nn as nn
 # https://github.com/TeaPoly/SpectrumAugmenter/blob/main/spectrum_augmenter.py
 # https://www.kaggle.com/code/yash612/simple-audio-augmentation
 
+"""
+    def _get_mel_spectrogram(self, linear_spectra):
+        # (time, freq, channels)
+        mel_feat = np.zeros((linear_spectra.shape[0], self._nb_mel_bins, linear_spectra.shape[-1]))
+        for ch_cnt in range(linear_spectra.shape[-1]):
+            mag_spectra = np.abs(linear_spectra[:, :, ch_cnt])**2
+            mel_spectra = np.dot(mag_spectra, self._mel_wts)
+            log_mel_spectra = librosa.power_to_db(mel_spectra)
+            mel_feat[:, :, ch_cnt] = log_mel_spectra
+        mel_feat = mel_feat.transpose((0, 2, 1)).reshape((linear_spectra.shape[0], -1))
+        # (time, channels x freq)
+        return mel_feat
+"""
+
 _SAMPLE_DIR = "_assets"
 SAMPLE_WAV_SPEECH_URLS = ["https://www2.cs.uic.edu/~i101/SoundFiles/CantinaBand3.wav", 
                           "https://www2.cs.uic.edu/~i101/SoundFiles/StarWars3.wav", 
