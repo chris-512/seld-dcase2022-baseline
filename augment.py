@@ -6,49 +6,37 @@ import random
 import matplotlib
 import matplotlib.pyplot as plt
 from sparse_image_warp import sparse_image_warp
-
 matplotlib.use('TkAgg')
-
-
 import requests 
 
- 
 import torch
 import torch.nn as nn
 
-_SAMPLE_DIR = "_assets"
- 
+# https://github.com/DemisEom/SpecAugment/blob/7f1435963b37ac8f9e4de9e44d754ecc41eaba85/tests/spec_augment_test_pytorch.py#L64
 
+_SAMPLE_DIR = "_assets"
 SAMPLE_WAV_SPEECH_URLS = ["https://www2.cs.uic.edu/~i101/SoundFiles/CantinaBand3.wav", 
                           "https://www2.cs.uic.edu/~i101/SoundFiles/StarWars3.wav", 
                           "https://dummy.wav"]
 SAMPLE_WAV_SPEECH_PATHS = [os.path.join(_SAMPLE_DIR, "sample1.wav"), os.path.join(_SAMPLE_DIR, "sample2.wav"), os.path.join(_SAMPLE_DIR, "sample3.wav")]
-
-
 os.makedirs(_SAMPLE_DIR, exist_ok=True)
 
 def _fetch_data():
-
     uris = [
         (SAMPLE_WAV_SPEECH_URLS[0], SAMPLE_WAV_SPEECH_PATHS[0]), 
         (SAMPLE_WAV_SPEECH_URLS[1], SAMPLE_WAV_SPEECH_PATHS[1]),
         (SAMPLE_WAV_SPEECH_URLS[2], SAMPLE_WAV_SPEECH_PATHS[2]),
     ]
-
     if all([os.path.exists(path) for _, path in uris]):
         return
-
     print('Downloading wav files...')
-
     for url, path in uris:
         with open(path, "wb") as file_:
             file_.write(requests.get(url).content)
 
 _fetch_data()
 
-
 def time_warp(spec, W=5):
-
     num_rows = spec.shape[1]
     spec_len = spec.shape[2] 
 
@@ -68,55 +56,34 @@ def time_warp(spec, W=5):
     warped_spectro, dense_flows = sparse_image_warp(spec, src_pts, dest_pts)
     return warped_spectro.squeeze(3)
 
- 
-
 class Augmentor:
-
   def __init__(self, list_enabled):
     self.list_enabled = list_enabled
-
+    
   def is_enabled(self, aug_name):
     return aug_name in self.list_enabled
-
+   
   def do_specaugment(self, mel_spectrogram, time_warping_para=40, frequency_masking_para=27,
                  time_masking_para=100, frequency_mask_num=1, time_mask_num=1):
 
     """Spec augmentation Calculation Function.
-
       'SpecAugment' have 3 steps for audio data augmentation.
-
       first step is time warping using Tensorflow's image_sparse_warp function.
-
       Second step is frequency masking, last step is time masking.
-
       # Arguments:
-
       mel_spectrogram(numpy array): audio file path of you want to warping and masking.
-
       time_warping_para(float): Augmentation parameter, "time warp parameter W".
-
           If none, default = 80 for LibriSpeech.
-
       frequency_masking_para(float): Augmentation parameter, "frequency mask parameter F"
-
           If none, default = 100 for LibriSpeech.
-
       time_masking_para(float): Augmentation parameter, "time mask parameter T"
-
           If none, default = 27 for LibriSpeech.
-
       frequency_mask_num(float): number of frequency masking lines, "m_F".
-
           If none, default = 1 for LibriSpeech.
-
       time_mask_num(float): number of time masking lines, "m_T".
-
           If none, default = 1 for LibriSpeech.
-
       # Returns
-
       mel_spectrogram(numpy array): warped and masked mel spectrogram.
-
     """ 
 
     c = mel_spectrogram.shape[0]
@@ -175,7 +142,6 @@ def visualization_spectrogram(mel_spectrogram, title="", block=True):
       mel_spectrogram(ndarray): mel_spectrogram to visualize.
       title(String): plot figure's title
     """
-
     # Show mel-spectrogram using librosa's specshow.
     plt.figure(figsize=(10, 4))
     librosa.display.specshow(librosa.power_to_db(mel_spectrogram, ref=np.max), x_axis='time', y_axis='mel', fmax=8000)
