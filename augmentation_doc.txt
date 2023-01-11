@@ -18,3 +18,5 @@ https://arxiv.org/abs/2108.03020
 https://github.com/qiuqiangkong/audioset_tagging_cnn/blob/f4295e2a8a9c66161a90929d98fef0f70b2d7258/pytorch/main.py
 https://github.com/suicao/Pytorch-Audio-Emotion-Recognition/blob/master/mixup.py
 https://github.com/GT-KIM/specmix/blob/1f8fae4c0f4ae3be574d62450138fb5dd443b222/sound_event_classification/utils.py
+
+https://github.com/thomeou/SALSA/blob/main/utilities/transforms.py
